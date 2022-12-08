@@ -99,7 +99,6 @@ device = 0
 
 labeled_split = 0.01  # 1% data
 shuffle_dataset = True
-random_seed= 42
 
 if args.resume_net is not None:
     logging.info('Loading resume student network...')
@@ -158,9 +157,6 @@ def train():
     logging.info('Loading Dataset...')
 
     dataset = WiderFaceDetection(training_dataset,preproc(img_dim, rgb_mean))
-    # data_strong = WiderFaceDetection(training_dataset, preproc(img_dim, rgb_mean), aug_strong=True)
-
-    # dataset = Two_Dataset(data_weak, data_strong)
 
     dataset_size = len(dataset)
 
@@ -168,17 +164,14 @@ def train():
     split = int(np.floor(labeled_split * dataset_size))
 
     if shuffle_dataset:
-        np.random.seed(random_seed)
+        np.random.seed(seed)
         np.random.shuffle(indices)
     unlabeled_indices, labeled_indices = indices[split:], indices[:split]
 
 
     # Creating PT data samplers and loaders:
-    np.random.seed(seed)
     unlabeled_sampler = SubsetRandomSampler(unlabeled_indices)
-    # print('unlabeled_indices: ', unlabeled_indices)
     labeled_sampler = SubsetRandomSampler(labeled_indices)
-    # print('labeled_indices: ', labeled_indices)
 
     unlabeled_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
                                                         sampler=unlabeled_sampler, num_workers=num_workers,
@@ -218,10 +211,8 @@ def train():
             if weak % 2 == 0:
                 labeled_images_weak, labeled_images_strong, targets = batch_iterator_label.next()
                 images = labeled_images_strong
-                # print('strong data')
             else:
                 images = labeled_images_weak
-                # print('weak data')
             weak += 1
 
             load_t0 = time.time()
@@ -285,10 +276,8 @@ def train():
             if weak % 2 == 0:
                 labeled_images_weak, labeled_images_strong, labeled_targets = batch_iterator_label.next()
                 labeled_images = labeled_images_strong
-                # print('strong data')
             else:
                 labeled_images = labeled_images_weak
-                # print('weak data')
             weak += 1
 
             load_t0 = time.time()
@@ -404,8 +393,6 @@ def show(model, images, show_image=True):
         image = image.unsqueeze(0)
         loc, conf = model(image)  # forward pass
         conf = F.softmax(conf, dim=-1)
-        # loc = Variable(loc.detach().data, requires_grad=False)
-        # conf = Variable(conf.detach().data, requires_grad=False)
         priorbox = PriorBox(cfg, image_size=(im_height, im_width))
         priors = priorbox.forward()
         priors = priors.to(device)

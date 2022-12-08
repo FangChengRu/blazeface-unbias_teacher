@@ -1,6 +1,6 @@
 # Implement unbiased teacher algorithm on blazeface model by pytorch
 
-##### Data
+## Data
 1. The dataset directory as follows:
 
 ```Shell
